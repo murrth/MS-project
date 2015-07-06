@@ -1,0 +1,208 @@
+
+% Clear any loaded files/variables
+clear all;
+
+% Close any open figures
+close all;
+
+% Load Data
+dat = load('data.txt');
+%dat = load('dataDR10SD07.txt');
+%dat = load('dataDR08SD06.txt');
+%dat = load('data.txt');
+
+
+% Subjects
+sIni = {'TS' 'LR' 'HK' 'MA'}; 
+
+% Label Data Columns
+sub             = dat(:,1);
+ses             = dat(:,2);
+block           = dat(:,3);
+trial           = dat(:,4);
+cond            = dat(:,5);
+trialType       = dat(:,6);
+trialDelay      = dat(:,7);
+targetLoc       = dat(:,8);
+targetEcc       = dat(:,9); 
+gapSize         = dat(:,10);
+gapLocT         = dat(:,11);
+
+tedfFix          = dat(:,12);
+tedfpreCueON    = dat(:,13);
+tedfpreISIOn    = dat(:,14);
+tedfstimOn      = dat(:,15);
+tedfpostISIOn   = dat(:,16); %same as tedfstimOff
+tedfrespToneOn  = dat(:,17);
+tedfClr         = dat(:,18);
+
+tSac            = dat(:,19);
+keyRT           = dat(:,20);
+resp            = dat(:,21);
+cor             = dat(:,22);
+sacReq          = dat(:,23);
+stairCase       = dat(:,24);
+
+trial2          = dat(:,25);
+sacNum          = dat(:,26);
+sacType         = dat(:,27);
+
+sacOn           = dat(:,28);
+sacOff          = dat(:,29);
+sacDur          = dat(:,30);
+sacVPeak        = dat(:,31);
+
+sacDist         = dat(:,32); %rho
+sacAngle1       = dat(:,33); %theta
+sacAmp          = dat(:,34);
+sacAngle2       = dat(:,35);
+
+sacxOnset       = dat(:,36);
+sacyOnset       = dat(:,37);
+sacxOffset      = dat(:,38);
+sacyOffset      = dat(:,39);
+
+
+%% Various Variables 
+
+% Condition
+valid = trialType == 1;
+invalid = trialType == 2;
+
+
+% Subjects
+%numSub = length(unique(sub));
+numSub = 4;
+
+% Stimuli
+%targLeft = targLoc ==1;
+%targRight = targLoc == 2;
+
+minimum = 1;
+maximum = 2000;
+
+%minimum = 300;
+%maximum = 600;
+
+amp = sacAmp > 0.05 & sacAmp <=1.5; 
+
+% Stimuli
+near        = targetEcc == 2.5; 
+far         = targetEcc == 5.0; 
+
+delay = trialDelay>=70;
+
+
+ecc = near | far
+
+% Microsaccade Use
+use = sacDur>=6 & sacDur<40 & amp & sacVPeak <=100 & sacOn >= minimum & sacOn <= maximum & delay & ecc; % & delay & far;  
+
+% Response
+%response = tRes-tFix;     
+%respMN = mean(response( (sacNum == 0 | sacNum ==1) & use));
+
+% Get Microsaccade Count 
+%totalMicro = length(sacOn(use));
+%totalMicroNeutral = length(sacOn(use & neutral))
+%totalMicroValid = length(sacOn(use & valid))
+
+wbLock = minimum;
+waLock = maximum;
+
+ww = 50; %was 50
+sw = 10;
+
+%%Individual Subjects
+i = 0;
+counter = 0;
+figure
+
+
+for i=1:numSub
+    
+counter = counter + 1
+
+% Valid
+msOns = sacOn(valid & use & sub==i ); 
+nt = length(trial((sacNum == 0 | sacNum ==1) & valid & sub==i & delay & ecc)); %& delay & far 
+[rate, scale] = gausRate(msOns,wbLock,waLock,nt);
+
+valRate(counter,:) = rate'; %save data for each subject in a matrix
+subplot(numSub,1,counter)
+
+plot(scale, rate, '-g', 'LineWidth', 1); 
+axis([minimum, maximum, 0, 3.5]);
+
+hold on;
+
+% Invalid
+msOns = sacOn(invalid & use & sub==i); 
+nt = length(trial((sacNum == 0 | sacNum ==1) & invalid & sub==i & delay & ecc )); %& delay & far
+[rate, scale] = gausRate(msOns,wbLock,waLock,nt);
+
+invalRate(counter,:) = rate'; %save data for each subject in a matrix
+plot(scale, rate, '-r', 'LineWidth', 1); 
+hold on;
+
+
+legend('Valid', 'Invalid');
+
+xlabel('Time (ms)');
+ylabel('Rate (1/sec)');
+title(i);
+
+line([500,500], [0, 2], 'Color' ,[0 0 0]);
+text(500, 2.5, 'Cue', 'Color', [0 0 0]);
+
+%660         760         960        1235        1510
+line([620, 620], [0, 1], 'Color' ,[0 0 0]);
+line([725, 725], [0, 1], 'Color' ,[0 0 0]);
+line([950, 950], [0, 1], 'Color' ,[0 0 0]);
+line([1200, 1200], [0, 1], 'Color' ,[0 0 0]);
+line([1500, 1500], [0, 1], 'Color' ,[0 0 0]);
+
+
+end
+
+%Plot Population Microsaccade Rates
+
+vRate = nanmean(valRate);
+iRate = nanmean(invalRate);
+
+
+% Valid, Invalid, Neutral
+figure
+plot(scale, vRate, '-g', 'LineWidth', 1.5);
+hold on;
+plot(scale, iRate, '-r', 'LineWidth', 1.5);
+hold on;
+
+legend('Valid', 'Invalid');
+axis([minimum, maximum, 0, 4]);
+xlabel('Time (ms)');
+ylabel('Microsaccade Rate (1/sec)');
+
+hold on;
+
+ 
+vSem=nanstd(valRate)/sqrt(length(valRate(:,1))); 
+boundedline(scale, vRate, vSem, '-g', 'transparency', .3, 'alpha');
+
+iSem=nanstd(invalRate)/sqrt(length(invalRate(:,1))); 
+boundedline(scale, iRate, iSem, '-r', 'transparency', .3, 'alpha');
+ 
+line([500,500], [0, 2], 'Color' ,[0 0 0]);
+text(500, 2.10, 'preCue', 'Color', [0 0 0]);
+
+line([620, 620], [0, 2], 'Color' ,[0 0 0]);
+text(620, 2.10, 'earliest landolt', 'Color', [0 0 0]);
+
+line([620, 620], [0, 1], 'Color' ,[0 0 0]);
+line([950, 950], [0, 1], 'Color' ,[0 0 0]);
+
+line([1500, 1500], [0, 1], 'Color' ,[0 0 0]);
+
+line([1500, 1500], [0, 2], 'Color' ,[0 0 0]);
+text(1500, 2.10, 'latest landolt', 'Color', [0 0 0]);
+

@@ -1,0 +1,375 @@
+% Clear any loaded files/variables
+clear all;
+
+% Close any open figures
+close all;
+
+% Load Data
+dat = load('data.txt');
+
+% Subjects
+sIni = {'TA' 'OM' 'LR' 'GS' 'CL' 'JG' 'HK' 'NW' 'AA' 'TG'}; % Hannah, Talulah, Nick, Alex
+
+% Label Data Columns
+sub             = dat(:,1);
+ses             = dat(:,2);
+block           = dat(:,3);
+trial           = dat(:,4);
+cond            = dat(:,5);
+trialType       = dat(:,6);
+trialDelay      = dat(:,7);
+targetLoc       = dat(:,8);
+targetEcc       = dat(:,9); 
+gapSize         = dat(:,10);
+gapLocT         = dat(:,11);
+
+tedfFix         = dat(:,12);
+tedfpreCueON    = dat(:,13);
+tedfpreISIOn    = dat(:,14);
+tedfstimOn      = dat(:,15);
+tedfpostISIOn   = dat(:,16); %same as tedfstimOff
+tedfrespToneOn  = dat(:,17);
+tedfClr         = dat(:,18);
+
+tSac            = dat(:,19);
+keyRT           = dat(:,20);
+resp            = dat(:,21);
+cor             = dat(:,22);
+sacReq          = dat(:,23);
+stairCase       = dat(:,24);
+
+trial2          = dat(:,25);
+sacNum          = dat(:,26);
+sacType         = dat(:,27);
+
+sacOn           = dat(:,28);
+sacOff          = dat(:,29);
+sacDur          = dat(:,30);
+sacVPeak        = dat(:,31);
+
+sacDist         = dat(:,32); %rho
+sacAngle1       = dat(:,33); %theta
+sacAmp          = dat(:,34);
+sacAngle2       = dat(:,35);
+
+sacxOnset       = dat(:,36);
+sacyOnset       = dat(:,37);
+sacxOffset      = dat(:,38);
+sacyOffset      = dat(:,39);
+
+
+%% Various Variables 
+
+% Condition
+valid   = trialType == 1;
+invalid = trialType == 2;
+neutral = trialType == 3;
+
+% Subjects
+numSub = length(unique(sub));
+
+% Stimuli
+targLeft    = targetLoc == 1;
+targRight   = targetLoc == 2;
+
+near        = targetEcc == 2.5; 
+far         = targetEcc == 5.0; 
+
+minimum = 500; %500
+maximum = 2000; %2000
+
+amp = sacAmp > 0.05 & sacAmp <=1.5; 
+
+% Microsaccade Use
+use = sacDur>=6 & sacDur<40 & amp & sacVPeak <=100 & sacOn >= minimum & sacOn <= maximum & far;  
+
+%% Convert Radians to Degrees
+
+i = 0
+counter = 0;
+microDeg=[];
+
+%Rad2Deg
+for i = 1:length(sacAngle1)
+   counter = counter + 1;
+   RAD = sacAngle1(i);
+   DEG = rad2deg(RAD);
+   microDeg(counter,:) = DEG;
+end
+
+i = 0;
+microDegDev = [];
+
+
+%Get Deviation Away from Horizontal
+
+for i = 1:length(microDeg)
+    
+    if (microDeg(i) >=0 && microDeg(i) <=90)
+       microDegDev(i) = microDeg(i);
+       
+    elseif (microDeg(i) >90 && microDeg(i) <=180)
+       microDegDev(i) = 180 - microDeg(i); 
+            
+    elseif (microDeg(i) >180 && microDeg(i) <=270)
+       microDegDev(i) = abs(180 - microDeg(i));
+                
+    elseif (microDeg(i) >270 && microDeg(i) <=360)
+       microDegDev(i) = 360 - microDeg(i);
+                               
+    end
+end
+
+dat = [dat, microDeg, microDegDev'];
+
+
+%% Plot Deviation from Horizontal
+
+
+%are 0s NANs???? or truly 0000s  %%%%%%%%%%%%%
+
+% Valid
+angDevPerVal = [];
+angDevBinVal = [];
+
+counter = 0;
+binranges = 5:10:95
+%binranges = 5:40:95
+
+for i=1:numSub    
+    counter = counter + 1;
+    x = microDegDev(use & valid & sub==i)
+    bincounts = histc(x, binranges);    
+    angDevPerVal(counter, 1:length(binranges)) = bincounts./length(microDegDev(use & valid & sub==i));
+end
+
+% Invalid
+angDevPerInv = [];
+angDevBinInv = [];
+
+counter = 0;
+
+for i=1:numSub    
+    counter = counter + 1;
+    x = microDegDev(use & invalid & sub==i)
+    bincounts = histc(x, binranges);    
+    angDevPerInv(counter, 1:length(binranges)) = bincounts./length(microDegDev(use & invalid & sub==i));
+end
+
+% Neutral
+angDevPerNeu = [];
+angDevBinNeu = [];
+
+counter = 0;
+
+for i=1:numSub    
+    counter = counter + 1;
+    x = microDegDev(use & neutral & sub==i)
+    bincounts = histc(x, binranges);    
+    angDevPerNeu(counter, 1:length(binranges)) = bincounts./length(microDegDev(use & neutral & sub==i));
+end
+
+
+figure
+
+errorbar(binranges(1:length(binranges)-1), mean(angDevPerVal(:, 1:length(binranges)-1)), std(angDevPerVal(:, 1:length(binranges)-1))/sqrt(length(angDevPerVal)), '-or')
+hold on;
+errorbar(binranges(1:length(binranges)-1), mean(angDevPerInv(:, 1:length(binranges)-1)), std(angDevPerInv(:, 1:length(binranges)-1))/sqrt(length(angDevPerInv)), '-og')
+hold on;
+errorbar(binranges(1:length(binranges)-1), mean(angDevPerNeu(:, 1:length(binranges)-1)), std(angDevPerNeu(:, 1:length(binranges)-1))/sqrt(length(angDevPerNeu)), '-ob')
+hold on;
+
+axis([0, 90, 0, .30]);
+legend('Valid', 'Invalid', 'Neutral')
+xlabel('Angular Deviation from Horizontal (deg)');
+ylabel('Proportion');
+
+
+%% Box Plot
+
+% Get mean deviation per subject
+
+angDevMean = [];
+counter = 0;
+
+for i=1:numSub
+    counter = counter + 1;
+    
+    % Valid
+    microDegDevMean = mean(microDegDev(use & valid & sub==i));
+    angDevMean(counter, 1)= microDegDevMean;
+ 
+    % Invalid
+    microDegDevMean = mean(microDegDev(use & invalid & sub==i));
+    angDevMean(counter, 2)= microDegDevMean;
+    
+    % Neutral
+    microDegDevMean = mean(microDegDev(use & neutral & sub==i));
+    angDevMean(counter, 3)= microDegDevMean;
+
+end
+
+cond = {'Valid', 'Invalid', 'Neutral'};
+
+figure
+boxplot(angDevMean, cond, 'colors', 'grb')
+%legend('Valid', 'Invalid', 'Neutral')
+ylabel('Mean Angular Deviation from Horizontal (deg)');
+xlabel('Condition');
+
+anova_rm(angDevMean)
+[h,p,ci,stats]=ttest(angDevMean(:,1), angDevMean(:,2))
+[h,p,ci,stats]=ttest(angDevMean(:,1), angDevMean(:,3))
+[h,p,ci,stats]=ttest(angDevMean(:,2), angDevMean(:,3))
+
+
+%% Deviation per Interval
+
+horzMicro = microDegDev <= 30; %45
+vertMicro = microDegDev > 30; %45
+
+
+
+% Interval 1 (1:500)
+i = 0;
+counter = 0;
+
+% Microsaccade Use
+use = sacDur>=8 & sacDur<40 & amp & sacVPeak <=100 & sacOn >= 1 & sacOn <= 500; 
+
+for i=1:numSub    
+    counter = counter + 1;
+
+    valHorz =  sum(horzMicro(use & valid & sub==i));
+    valVert =  sum(vertMicro(use & valid & sub==i));    
+    hvRatioInt1(counter,1) = valHorz/valVert;
+
+    invHorz =  sum(horzMicro(use & invalid & sub==i));
+    invVert =  sum(vertMicro(use & invalid & sub==i));    
+    hvRatioInt1(counter,2) = invHorz/invVert;
+    
+    neuHorz =  sum(horzMicro(use & neutral & sub==i));
+    neuVert =  sum(vertMicro(use & neutral & sub==i));    
+    hvRatioInt1(counter,3) = neuHorz/neuVert;
+    
+end
+
+%anova_rm(hvRatioInt1)
+mean(hvRatioInt1)
+
+% Interval 2 (500:1000)
+i = 0;
+counter = 0;
+
+% Microsaccade Use
+use = sacDur>=8 & sacDur<40 & amp & sacVPeak <=100 & sacOn > 500 & sacOn <= 1000; 
+
+for i=1:numSub    
+    counter = counter + 1;
+
+    valHorz =  sum(horzMicro(use & valid & sub==i));
+    valVert =  sum(vertMicro(use & valid & sub==i));    
+    hvRatioInt2(counter,1) = valHorz/valVert;
+
+    invHorz =  sum(horzMicro(use & invalid & sub==i));
+    invVert =  sum(vertMicro(use & invalid & sub==i));    
+    hvRatioInt2(counter,2) = invHorz/invVert;
+    
+    neuHorz =  sum(horzMicro(use & neutral & sub==i));
+    neuVert =  sum(vertMicro(use & neutral & sub==i));    
+    hvRatioInt2(counter,3) = neuHorz/neuVert;
+    
+end
+
+%anova_rm(hvRatioInt2)
+mean(hvRatioInt2)
+
+% Interval 3 (1250:1750)
+i = 0;
+counter = 0;
+
+% Microsaccade Use
+use = sacDur>=8 & sacDur<40 & amp & sacVPeak <=100 & sacOn > 1250 & sacOn <= 1750; 
+
+for i=1:numSub    
+    counter = counter + 1;
+
+    valHorz =  sum(horzMicro(use & valid & sub==i));
+    valVert =  sum(vertMicro(use & valid & sub==i));    
+    hvRatioInt3(counter,1) = valHorz/valVert;
+
+    invHorz =  sum(horzMicro(use & invalid & sub==i));
+    invVert =  sum(vertMicro(use & invalid & sub==i));    
+    hvRatioInt3(counter,2) = invHorz/invVert;
+    
+    neuHorz =  sum(horzMicro(use & neutral & sub==i));
+    neuVert =  sum(vertMicro(use & neutral & sub==i));    
+    hvRatioInt3(counter,3) = neuHorz/neuVert;
+    
+end
+
+%anova_rm(hvRatioInt3)
+mean(hvRatioInt3)
+
+
+valHVRatio = [hvRatioInt1(:,1),hvRatioInt2(:,1),hvRatioInt3(:,1)] 
+
+anova_rm(valHVRatio)
+mnValHVRatio=mean(valHVRatio)
+semValHVRatio=std(valHVRatio)/sqrt(length(valHVRatio)) % standard error of the mean
+
+
+invHVRatio = [hvRatioInt1(:,2),hvRatioInt2(:,2),hvRatioInt3(:,2)] 
+
+anova_rm(invHVRatio)
+mnInvHVRatio=mean(invHVRatio)
+semInvHVRatio=std(invHVRatio)/sqrt(length(invHVRatio)) % standard error of the mean
+
+
+neuHVRatio = [hvRatioInt1(:,3),hvRatioInt2(:,3),hvRatioInt3(:,3)] 
+
+anova_rm(neuHVRatio)
+mnNeuHVRatio=mean(neuHVRatio)
+semNeuHVRatio=std(neuHVRatio)/sqrt(length(neuHVRatio)) % standard error of the mean
+
+%Figure
+
+figure
+
+plot(mnValHVRatio, '-g')
+hold on;
+plot(mnInvHVRatio, '-r')
+hold on;
+plot(mnNeuHVRatio, '-b')
+axis([0.5, 3.5, 0, 5]);
+legend('Valid', 'Invalid', 'Neutral')
+xlabel('Time Interval (ms)');
+ylabel('Horizontal/Vertical Ratio');
+
+
+% errorbar(mnSacHVRatio, semSacHVRatio, '-r')
+% hold on;
+% errorbar(mnAttHVRatio, semAttHVRatio, '-g')
+% hold on;
+% errorbar(mnNeuHVRatio, semNeuHVRatio, '-b')
+% legend('Saccade', 'Attention', 'Neutral')
+% xlabel('Time Interval (ms)');
+% ylabel('Horizontal/Vertical Ratio');
+
+
+
+% plot(scale, sRate, '-r', 'LineWidth', 1);
+% hold on;
+% plot(scale, nRate, '-b', 'LineWidth', 1);
+% legend('Saccade', 'Neutral');
+% axis([minimum, maximum, 0, 3]);
+% xlabel('Time (ms)');
+% ylabel('Microsaccade Rate (1/sec)');
+
+
+
+
+
+
+
+
