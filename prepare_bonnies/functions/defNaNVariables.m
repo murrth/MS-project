@@ -1,0 +1,37 @@
+trial  = NaN;
+trial2 = NaN;
+trial3 = NaN;
+
+tedfFix = NaN;
+tedfSOn = NaN;
+tedfSOf = NaN;
+tedfGo  = NaN;
+tedfTOn = NaN;
+tedfTOf = NaN;
+tedfClr = NaN;
+
+block  = NaN;
+fixpox = NaN;
+fixpoy = NaN;
+tespox = NaN;
+tespoy = NaN;
+staTim = NaN;
+tesTim = NaN;
+statil = NaN;
+testil = NaN;
+tescon = NaN;
+tFix   = NaN;
+tStanOn= NaN;
+tStanOf= NaN;
+tGo    = NaN;
+tTestOn= NaN;
+tTestOf= NaN;
+tSac   = NaN;
+tRes   = NaN;
+tClr   = NaN;
+sacRT  = NaN;
+keyRT  = NaN;
+resSide= NaN;
+resCont= NaN;
+resTilt= NaN;
+sacReq = NaN;
