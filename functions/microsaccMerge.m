@@ -63,15 +63,15 @@ N = length(indx);
 sac = [];
 nsac = 0;
 dur = 1;
-a = 1;
-k = 1;
+a = 1; % start sac
+k = 1; % index place
 while k<N
     if indx(k+1)-indx(k)==1
         dur = dur + 1;
     else
         if dur>=MINDUR
             nsac = nsac + 1;
-            b = k;
+            b = k; % end sac
             sac(nsac,:) = [indx(a) indx(b)];
         end
         a = k+1;
@@ -79,13 +79,13 @@ while k<N
     end
     k = k + 1;
 end
-
-% check for minimum duration
-if dur>=MINDUR
-    nsac = nsac + 1;
-    b = k;
-    sac(nsac,:) = [indx(a) indx(b)];
-end
+% %  %duplicate?? 
+% % % check for minimum duration
+% % if dur>=MINDUR
+% %     nsac = nsac + 1;
+% %     b = k;
+% %     sac(nsac,:) = [indx(a) indx(b)];
+% % end
 
 % merge saccades
 if ~isempty(sac)
@@ -124,7 +124,8 @@ for s=1:nsac
     vpeak = max( sqrt( vel(a:b,1).^2 + vel(a:b,2).^2 ) );
     msac(s,3) = vpeak;
     % saccade vector (dx,dy)
-    dx = x(b,1)-x(a,1); 
+    % simple difference between position at start and end time points
+    dx = x(b,1)-x(a,1);  
     dy = x(b,2)-x(a,2); 
     msac(s,4) = dx;
     msac(s,5) = dy;

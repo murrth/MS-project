@@ -68,27 +68,31 @@ for f = 1: nFiles
                             block       = str2double(char(la(4)));
                             trial3      = str2double(char(la(5)));
                             condition   = str2double(char(la(6)));
-                            targetLoc   = str2double(char(la(7)));
-                            targetEcc   = str2double(char(la(8)));
-                            gapSize     = str2double(char(la(9)));
-                            gapLocT     = str2double(char(la(10)));
+                            % target
+                            ttype   = str2double(char(la(7)));
+                            delay   = str2double(char(la(8)));
+                            tLoc     = str2double(char(la(9)));
+                            tEcc     = str2double(char(la(10)));                            
+                            cEcc      = str2double(char(la(11))); %meaningless
+                            gapSize        = str2double(char(la(12)));
+                            gLoc         = str2double(char(la(13)));
+                            sacReq       = str2double(char(la(14)));
                             
-                            sacReq      = str2double(char(la(11)));
-                            resp        = str2double(char(la(12)));
-                            cor         = str2double(char(la(13)));
-                            keyRT       = str2double(char(la(14)));
-                            stairCase   = str2double(char(la(15)));
+                            key   = str2double(char(la(15)));                            
+                            corr        = str2double(char(la(16)));
+                            keyRT   = str2double(char(la(17)));
+                            stair   = str2double(char(la(18)));
+                            tFix     = str2double(char(la(19)));
+                            tpreCueOn     = str2double(char(la(20)));
+                            tpreISIOn = str2double(char(la(21)));
                             
-                            tFix        = str2double(char(la(16)));
-                            tpreCueOn   = str2double(char(la(17)));
-                            tpreISIOn   = str2double(char(la(18)));
-                            tStimOn     = str2double(char(la(19)));
-                            tStimOff    = str2double(char(la(20)));
-                            trespToneOn = str2double(char(la(21)));
+                            tStimOn        = str2double(char(la(22)));
+                            tStimOff        = str2double(char(la(23)));
+                            trespToneOn        = str2double(char(la(24)));
+                            tSac        = str2double(char(la(25)));
+                            tRes        = str2double(char(la(26)));
+                            tClr        = str2double(char(la(27)));
                             
-                            tSac        = str2double(char(la(22)));
-                            tRes        = str2double(char(la(23)));
-                            tClr        = str2double(char(la(24)));
                             
                             stillTheSameTrial = 0;
                     end
@@ -117,7 +121,7 @@ for f = 1: nFiles
             % create uniform data matrix containing any potential
             % information concerning a trial     
             % removed -> tedfpreISIOn
-            tab = [tab; block trial condition targetLoc targetEcc gapSize gapLocT tedfFix tedfpreCueOn  tedfstimOn tedfstimOff tedfrespToneOn tedfClr tSac keyRT resp cor sacReq stairCase];
+            tab = [tab; block trial condition ttype delay tLoc tEcc tedfFix tedfpreCueOn  tedfstimOn tedfstimOff tedfrespToneOn tedfClr tStimOn sacReq gapSize gLoc cEcc key];
             
         elseif trial~=trial2
             fprintf(1,'\nMissing Message between TRIALID %i and trialData %i (ignore if last trial)',trial,trial2);
