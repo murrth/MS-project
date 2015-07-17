@@ -12,9 +12,8 @@ function [rate, scale] = gausRate(msOns,wbLock,waLock,nt)
 % 12.12.2005 by Martin Rolfs
 
 if wbLock > 0
-    %wbLock = wbLock*-1;
     wbLock = wbLock*1;
-end  %bl added to deal w/ negative values
+end  
 
 if length(nt)==1
     nt = linspace(nt,nt,length((wbLock:waLock)));

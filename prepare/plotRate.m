@@ -6,12 +6,11 @@ clear all;
 close all;
 
 % Load Data
-dat = load('data.txt');
-
+dat = load('dataAnalyze.txt');
 
 
 % Subjects
-sIni = {'BL'}; 
+sIni = {'AD' 'ID' 'BL' 'RD' 'CS' 'CT'};
 
 % Label Data Columns
 sub             = dat(:,1);
@@ -19,185 +18,228 @@ ses             = dat(:,2);
 block           = dat(:,3);
 trial           = dat(:,4);
 cond            = dat(:,5);
-trialType       = dat(:,6);
-trialDelay      = dat(:,7);
-targetLoc       = dat(:,8);
-targetEcc       = dat(:,9); 
-gapSize         = dat(:,10);
-gapLocT         = dat(:,11);
+targetLoc       = dat(:,6);
+targetEcc       = dat(:,7); 
+gapSize         = dat(:,8);
+gapLocT         = dat(:,9);
 
-tedfFix          = dat(:,12);
-tedfpreCueON    = dat(:,13);
-tedfpreISIOn    = dat(:,14);
-tedfstimOn      = dat(:,15);
-tedfpostISIOn   = dat(:,16); %same as tedfstimOff
-tedfrespToneOn  = dat(:,17);
-tedfClr         = dat(:,18);
+tedfFix         = dat(:,10);
+tedfpreCueON    = dat(:,11);
+tedfpreISIOn    = dat(:,12);
+tedfstimOn      = dat(:,13);
+tedfpostISIOn   = dat(:,14); %same as tedfstimOff
+tedfrespToneOn  = dat(:,15);
+tedfClr         = dat(:,16);
 
-tSac            = dat(:,19);
-keyRT           = dat(:,20);
-resp            = dat(:,21);
-cor             = dat(:,22);
-sacReq          = dat(:,23);
-stairCase       = dat(:,24);
+tSac            = dat(:,17);
+keyRT           = dat(:,18);
+resp            = dat(:,19);
+cor             = dat(:,20);
+sacReq          = dat(:,21);
+stairCase       = dat(:,22);
 
-trial2          = dat(:,25);
-sacNum          = dat(:,26);
-sacType         = dat(:,27);
+trial2          = dat(:,23);
+sacNum          = dat(:,24);
+sacType         = dat(:,25);
 
-sacOn           = dat(:,28);
-sacOff          = dat(:,29);
-sacDur          = dat(:,30);
-sacVPeak        = dat(:,31);
+sacOn           = dat(:,26);
+sacOff          = dat(:,27);
+sacDur          = dat(:,28);
+sacVPeak        = dat(:,29);
 
-sacDist         = dat(:,32); %rho
-sacAngle1       = dat(:,33); %theta
-sacAmp          = dat(:,34);
-sacAngle2       = dat(:,35);
+sacDist         = dat(:,30); %rho
+sacAngle1       = dat(:,31); %theta
+sacAmp          = dat(:,32);
+sacAngle2       = dat(:,33);
 
-sacxOnset       = dat(:,36);
-sacyOnset       = dat(:,37);
-sacxOffset      = dat(:,38);
-sacyOffset      = dat(:,39);
+sacxOnset       = dat(:,34);
+sacyOnset       = dat(:,35);
+sacxOffset      = dat(:,36);
+sacyOffset      = dat(:,37);
 
 
 %% Various Variables 
 
 % Condition
-valid = trialType == 1;
-neutral = trialType == 3;
+sac = cond == 1;
+neu = cond == 2;
+att = cond == 3;
 
 % Subjects
 numSub = length(unique(sub));
-%numSub = 4;
 
-% Stimuli
-%targLeft = targLoc ==1;
-%targRight = targLoc == 2;
-
+% Interval
 minimum = 1;
-maximum = 2000;
+maximum = 1750;
 
-%minimum = 300;
-%maximum = 600;
-
+% Microsaccades
 amp = sacAmp > 0.05 & sacAmp <=1.5; 
+use = sacDur>=6 & sacDur<40 & amp & sacVPeak <=100 & sacOn >= minimum & sacOn <= maximum;  
 
-% Stimuli
-near        = targetEcc == 2.5; 
-far         = targetEcc == 5.0; 
-
-%delay = trialDelay==950;
+totalMicro = length(sacOn(use));
 
 
-ecc = near | far
+%% Calculate Rata for Individual Observers
 
-% Microsaccade Use
-use = sacDur>=6 & sacDur<40 & amp & sacVPeak <=100 & sacOn >= minimum & sacOn <= maximum &  ecc; % & delay & far;  
+% Set Parameters for Rate Calculation
 
-% Response
-%response = tRes-tFix;     
-%respMN = mean(response( (sacNum == 0 | sacNum ==1) & use));
+wbLock = minimum; % earliest time point
+waLock = maximum; % latest time point
 
-% Get Microsaccade Count 
-%totalMicro = length(sacOn(use));
-%totalMicroNeutral = length(sacOn(use & neutral))
-%totalMicroValid = length(sacOn(use & valid))
+ww = 50; % window width
+sw = 10; % sliding window
 
-wbLock = minimum;
-waLock = maximum;
 
-ww = 50; %was 50
-sw = 10;
-
-%%Individual Subjects
+% Calculate Rate and Plot
 i = 0;
 counter = 0;
 figure
-
 
 for i=1:numSub
     
 counter = counter + 1
 
-% Valid
-msOns = sacOn(valid & use & sub==i ); 
-nt = length(trial((sacNum == 0 | sacNum ==1) & valid & sub==i & ecc)); %& delay & far 
+% Saccade
+msOns = sacOn(sac & use & sub==i); 
+nt = length(trial((sacNum == 0 | sacNum ==1) & sac & sub==i)); 
 [rate, scale] = gausRate(msOns,wbLock,waLock,nt);
 
-vRate(counter,:) = rate'; %save data for each subject in a matrix
+sacRate(counter,:) = rate'; %save data for each subject in a matrix
 subplot(numSub,1,counter)
 
-plot(scale, rate, '-g', 'LineWidth', 1); 
-axis([minimum, maximum, 0, 3.5]);
-
-hold on;
-
-% Neutral
-msOns = sacOn(neutral & use & sub==i); 
-nt = length(trial((sacNum == 0 | sacNum ==1) & neutral & sub==i  & ecc )); %& delay & far
-[rate, scale] = gausRate(msOns,wbLock,waLock,nt);
-
-nRate(counter,:) = rate'; %save data for each subject in a matrix
 plot(scale, rate, '-r', 'LineWidth', 1); 
-hold on;
-
-legend('Valid', 'Neutral');
+axis([minimum, maximum, 0, 5]);
 
 xlabel('Time (ms)');
 ylabel('Rate (1/sec)');
 title(i);
 
 line([500,500], [0, 2], 'Color' ,[0 0 0]);
-text(500, 2.5, 'Cue', 'Color', [0 0 0]);
+text(500, 3, 'preCue', 'Color', [0 0 0]);
 
-%660         760         960        1235        1510
-line([620, 620], [0, 1], 'Color' ,[0 0 0]);
-%line([725, 725], [0, 1], 'Color' ,[0 0 0]);
-line([950, 950], [0, 1], 'Color' ,[0 0 0]);
-%line([1200, 1200], [0, 1], 'Color' ,[0 0 0]);
-line([1500, 1500], [0, 1], 'Color' ,[0 0 0]);
+line([1600, 1600], [0, 2], 'Color' ,[0 0 0]);
+text(1600, 3, 'landolt', 'Color', [0 0 0]);
+
+line([2300,2300], [0, 2], 'Color' ,[0 0 0]);
+text(2300, 3, 'respTone', 'Color', [0 0 0]);
+
+hold on;
+
+% Neutral
+msOns = sacOn(neu & use & sub==i); 
+nt = length(trial((sacNum == 0 | sacNum ==1) & neu & sub==i  )); 
+[rate, scale] = gausRate(msOns,wbLock,waLock,nt);
+
+neuRate(counter,:) = rate'; %save data for each subject in a matrix
+plot(scale, rate, '-b', 'LineWidth', 1); 
+
+hold on;
+
+% Attention
+msOns = sacOn(att & use & sub==i); 
+nt = length(trial((sacNum == 0 | sacNum ==1) & att & sub==i  )); 
+[rate, scale] = gausRate(msOns,wbLock,waLock,nt);
+
+attRate(counter,:) = rate'; %save data for each subject in a matrix
+plot(scale, rate, '-g', 'LineWidth', 1); 
 
 
 end
 
-%% Plot Population Microsaccade Rates
 
-validRate = nanmean(vRate);
-neutralRate = nanmean(nRate);
+%% Plot Average Microsaccade Rates
+
+sRate = nanmean(sacRate);
+nRate = nanmean(neuRate);
+aRate = nanmean(attRate);
 
 
-% Valid, Neutral
+% Saccade V Attention
 figure
-plot(scale, validRate, '-g', 'LineWidth', 1.5);
+subplot(3,1,1)
+plot(scale, sRate, '-r', 'LineWidth', 1);
 hold on;
-plot(scale, neutralRate, '-b', 'LineWidth', 1.5);
-hold on;
-
-legend('Valid', 'Neutral');
+plot(scale, aRate, '-g', 'LineWidth', 1);
+legend('Saccade', 'Attention');
 axis([minimum, maximum, 0, 4]);
 xlabel('Time (ms)');
 ylabel('Microsaccade Rate (1/sec)');
 
 hold on;
+ 
+sSem=nanstd(sacRate)/sqrt(length(sacRate(:,1))); 
+boundedline(scale, sRate, sSem, '-r', 'transparency', .3, 'alpha');
 
-vSem=nanstd(vRate)/sqrt(length(vRate(:,1))); 
-boundedline(scale, validRate, vSem, '-g', 'transparency', .3, 'alpha');
-
-nSem=nanstd(nRate)/sqrt(length(nRate(:,1))); 
-boundedline(scale, neutralRate, nSem, '-r', 'transparency', .3, 'alpha');
+aSem=nanstd(attRate)/sqrt(length(attRate(:,1))); 
+boundedline(scale, aRate, aSem, '-g', 'transparency', .3, 'alpha');
  
 line([500,500], [0, 2], 'Color' ,[0 0 0]);
 text(500, 2.10, 'preCue', 'Color', [0 0 0]);
 
-%line([620, 620], [0, 2], 'Color' ,[0 0 0]);
-%text(620, 2.10, 'earliest landolt', 'Color', [0 0 0]);
+line([1600, 1600], [0, 2], 'Color' ,[0 0 0]);
+text(1600, 2.10, 'landolt', 'Color', [0 0 0]);
 
-line([620, 620], [0, 1], 'Color' ,[0 0 0]);
-line([950, 950], [0, 1], 'Color' ,[0 0 0]);
+line([2300,2300], [0, 2], 'Color' ,[0 0 0]);
+text(2300, 2.10, 'respTone', 'Color', [0 0 0]);
 
-line([1500, 1500], [0, 1], 'Color' ,[0 0 0]);
+% Saccade V Neutral
+subplot(3,1,2)
+plot(scale, sRate, '-r', 'LineWidth', 1);
+hold on;
+plot(scale, nRate, '-b', 'LineWidth', 1);
+legend('Saccade', 'Neutral');
+axis([minimum, maximum, 0, 4]);
+xlabel('Time (ms)');
+ylabel('Microsaccade Rate (1/sec)');
 
-line([1500, 1500], [0, 2], 'Color' ,[0 0 0]);
-text(1500, 2.10, 'latest landolt', 'Color', [0 0 0]);
+hold on;
+ 
+sSem=nanstd(sacRate)/sqrt(length(sacRate(:,1))); 
+boundedline(scale, sRate, sSem, '-r', 'transparency', .3, 'alpha');
+
+nSem=nanstd(neuRate)/sqrt(length(neuRate(:,1))); 
+boundedline(scale, nRate, nSem, '-b', 'transparency', .3, 'alpha');
+
+line([500,500], [0, 2], 'Color' ,[0 0 0]);
+text(500, 2.10, 'preCue', 'Color', [0 0 0]);
+
+line([1600, 1600], [0, 2], 'Color' ,[0 0 0]);
+text(1600, 2.10, 'landolt', 'Color', [0 0 0]);
+
+line([2300,2300], [0, 2], 'Color' ,[0 0 0]);
+text(2300, 2.10, 'respTone', 'Color', [0 0 0]);
+
+% Attention V Neutral
+subplot(3,1,3)
+plot(scale, aRate, '-g', 'LineWidth', 1);
+hold on;
+plot(scale, nRate, '-b', 'LineWidth', 1);
+legend('Attention', 'Neutral');
+axis([minimum, maximum, 0, 4]);
+xlabel('Time (ms)');
+ylabel('Microsaccade Rate (1/sec)');
+
+hold on;
+ 
+aSem=nanstd(attRate)/sqrt(length(attRate(:,1))); 
+boundedline(scale, aRate, aSem, '-g', 'transparency', .3, 'alpha');
+
+nSem=nanstd(neuRate)/sqrt(length(neuRate(:,1))); 
+boundedline(scale, nRate, nSem, '-b', 'transparency', .3, 'alpha');
+
+line([500,500], [0, 2], 'Color' ,[0 0 0]);
+text(500, 2.10, 'preCue', 'Color', [0 0 0]);
+
+line([1600, 1600], [0, 2], 'Color' ,[0 0 0]);
+text(1600, 2.10, 'landolt', 'Color', [0 0 0]);
+
+line([2311,2311], [0, 2], 'Color' ,[0 0 0]);
+text(2300, 2.10, 'respTone', 'Color', [0 0 0]);
+
+
+
+
+
+
+
 
